@@ -1,0 +1,24 @@
+{
+  "name": "bsky-oauth-example",
+  "version": "1.0.0",
+  "description": "Simple example implementation of oAuth 2.0 for Bluesky",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ."
+  },
+  "keywords": [
+    "oauth",
+    "bluesky"
+  ],
+  "author": "James Futhey",
+  "license": "ISC",
+  "dependencies": {
+    "@atproto/api": "^0.13.19",
+    "@atproto/jwk-jose": "^0.1.2",
+    "@atproto/oauth-client-node": "^0.2.3",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

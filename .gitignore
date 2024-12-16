@@ -1,0 +1,11 @@
+node_modules
+.DS_Store
+.idea
+.env
+private_key_1.pem
+private_key_2.pem
+private_key_3.pem
+public_key_1.pem
+public_key_2.pem
+public_key_3.pem
+package-lock.json
