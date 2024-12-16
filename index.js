@@ -62,9 +62,8 @@ async function oauthClientInit() {
             response_types: ['code'],
             scope: 'atproto transition:generic',
             application_type: 'web',
-            // Todo: finish implementing JWKS
-            token_endpoint_auth_method: true || process.env.BASE_URL.includes('127.0.0.1') ? 'none' : 'private_key_jwt',
-            token_endpoint_auth_signing_alg: true || process.env.BASE_URL.includes('127.0.0.1') ? '' : 'RS256',
+            token_endpoint_auth_method: 'private_key_jwt',
+            token_endpoint_auth_signing_alg: 'RS256',
             dpop_bound_access_tokens: true,
             jwks_uri: process.env.BASE_URL + '/jwks.json',
         },
