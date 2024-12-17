@@ -19,7 +19,7 @@ sh ./generate_keypairs.sh
 
 # Running
 
-Once you've added your keys, you're ready to run `npm i && npm start`
+Once you've added your keys, you're ready to run `npm start`
 
 ## Cookie-based Auth Option
 Additional security benefits can come with using Cookie-based auth, but this is optional. No code changes are required in this example, except your env variable `USE_COOKIES` should be set to 1.
