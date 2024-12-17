@@ -29,7 +29,7 @@ const fetchWithAuth = async (url, options = {}) => {
 
     // If not in sessionStorage, attempt to retrieve from cookies
     if (!token) {
-        token = getCookie('token'); // Replace 'token' with your actual cookie name
+        token = getCookie('token');
     }
 
     // Default headers
@@ -60,7 +60,7 @@ const fetchWithAuth = async (url, options = {}) => {
         if (response.status === 401 || response.status === 403) {
             sessionStorage.removeItem('_token');
             // Optionally, remove the cookie if accessible
-            document.cookie = 'token=; Max-Age=0; path=/;'; // Replace 'token' with your cookie name
+            document.cookie = 'token=; Max-Age=0; path=/;';
             location.href = '/login';
 
             return console.warn('Authentication failed. Token has been removed.');
@@ -145,7 +145,9 @@ function logout() {
  * @returns {boolean} True if the user is logged in, false otherwise.
  */
 function isLoggedIn() {
-    return !!sessionStorage.getItem('_token');
+    let token = sessionStorage.getItem('_token');
+    if (!token) token = getCookie('token');
+    return !!token;
 }
 
 // EXAMPLES
