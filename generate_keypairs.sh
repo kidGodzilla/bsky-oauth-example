@@ -4,10 +4,11 @@
 if [ ! -f .env ]; then
   echo "Creating .env file with default values..."
   cat <<EOL >> .env
+NODE_ENV='development'
 PORT=5001
-DEBUG=1
+DEBUG=true
+USE_COOKIES=false
 BASE_URL='http://127.0.0.1:5001'
-
 PRIVATE_KEY_1=''
 PRIVATE_KEY_2=''
 PRIVATE_KEY_3=''

@@ -1,26 +1,56 @@
 require('dotenv').config();
 
+// OAuth Settings
+const OAUTH_APP_NAME = 'Bluesky OAuth Example App';
+const REDIRECT_URL = '/';
+
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const { query, validationResult } = require('express-validator');
 
 const { NodeOAuthClient, Session } = require('@atproto/oauth-client-node');
 const { JoseKey } = require('@atproto/jwk-jose');
 const { Agent } = require('@atproto/api');
 
+// Required Env Variables
+const requiredEnvVars = ['JWT_SECRET', 'BASE_URL', 'PRIVATE_KEY_1', 'PRIVATE_KEY_2', 'PRIVATE_KEY_3'];
+
+requiredEnvVars.forEach((varName) => {
+    if (!process.env[varName]) {
+        console.error(`Error: Missing required environment variable ${varName}`);
+        process.exit(1);
+    }
+});
+
+const debug = process.env.DEBUG === 'true' || false;
 const JWT_SECRET = process.env.JWT_SECRET;
-const debug = process.env.DEBUG || false;
 const port = process.env.PORT || 5000;
 
-// OAuth Settings
-const OAUTH_APP_NAME = 'Bluesky OAuth Example App';
-const REDIRECT_URL = '/';
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+});
 
 // Express App
 const app = express();
+app.use(cookieParser());
 app.use(express.json());
+app.use(limiter);
+
+// Verify/force HTTPS
+if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+        if (req.header('x-forwarded-proto') !== 'https') {
+            return res.redirect(`https://${req.header('host')}${req.url}`);
+        }
+        next();
+    });
+}
 
 app.use(cors({
     origin: process.env.BASE_URL,
@@ -29,8 +59,13 @@ app.use(cors({
 }));
 
 app.use((err, req, res, next) => {
-    console.error('Error:', err);
-    res.status(500).send('Internal Server Error');
+    if (debug) {
+        console.error(err.stack);
+        res.status(500).json({ error: err.message, stack: err.stack });
+    } else {
+        console.error(err.stack);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
 });
 
 let client = null;
@@ -97,23 +132,20 @@ async function oauthClientInit() {
 /* Authentication Middleware */
 const verifyToken = (req, res, next) => {
     const authHeader = req.headers['authorization']; // Expecting 'Bearer <token>'
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = authHeader ? authHeader.split(' ')[1] : req.cookies.token;
 
     if (!token) {
         return res.status(401).json({ error: 'Access denied. No token provided.' });
     }
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) {
-            return res.status(403).json({ error: 'Invalid or expired token.' });
-        }
-
+    try {
+        const user = jwt.verify(token, JWT_SECRET);
         req.auth = { user };
-
-        // Add user information to request for use in subsequent middleware/routes
         req.user = user;
         next();
-    });
+    } catch (err) {
+        res.status(403).json({ error: 'Invalid or expired token.' });
+    }
 };
 
 // OAuth informational endpoints
@@ -122,7 +154,14 @@ app.get('/jwks.json', (req, res) => res.json(client.jwks));
 
 
 // Create an endpoint to initiate the OAuth flow
-app.get('/oauth/login', async (req, res, next) => {
+app.get('/oauth/login', [
+    query('handle').matches(/^[a-zA-Z0-9._-]+$/).withMessage('Handle must contain only letters, numbers, dots, hyphens, and underscores').trim().escape(),
+], async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
         const handle = req.query.handle;
         if (!handle) return res.status(400).send('Handle is required');
@@ -145,6 +184,7 @@ app.get('/oauth/login', async (req, res, next) => {
     }
 });
 
+// Create an endpoint to handle the OAuth callback
 // Create an endpoint to handle the OAuth callback
 app.get(['/oauth/callback'], async (req, res, next) => {
     try {
@@ -175,12 +215,25 @@ app.get(['/oauth/callback'], async (req, res, next) => {
 
         // Generate a JWT token
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '48h' }); // Adjust expiration as needed
+        let url;
 
-        const url = `${REDIRECT_URL}?token=${encodeURIComponent(token)
-            }&did=${ encodeURIComponent(profile.data.did) 
-            }&handle=${ encodeURIComponent(profile.data.handle) 
-            }&displayName=${ encodeURIComponent(profile.data.displayName) 
+        if (process.env.USE_COOKIES === 'true') {
+            // Set the token as an HttpOnly, Secure cookie
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'Strict', // Adjust as per your requirements
+                maxAge: 48 * 60 * 60 * 1000, // 48 hours
+            });
+            url = REDIRECT_URL;
+        } else {
+            // Redirect with token and other parameters in the query string
+            url = `${REDIRECT_URL}?token=${encodeURIComponent(token)
+            }&did=${ encodeURIComponent(profile.data.did)
+            }&handle=${ encodeURIComponent(profile.data.handle)
+            }&displayName=${ encodeURIComponent(profile.data.displayName)
             }&avatar=${ encodeURIComponent(profile.data.avatar)}`;
+        }
 
         if (debug) console.log('Redirecting to:', url);
 
@@ -224,6 +277,13 @@ app.get(['/login'], (req, res) => {
 
 app.use(express.static('public'));
 
-oauthClientInit();
 
-app.listen(port, function () { console.log('App listening on port', port) });
+(async function () {
+    try {
+        await oauthClientInit();
+        app.listen(port, () => console.log(`App listening on port ${port}`));
+    } catch (error) {
+        console.error('Failed to initialize OAuth client:', error);
+        process.exit(1);
+    }
+})();
