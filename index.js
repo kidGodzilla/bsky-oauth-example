@@ -71,9 +71,9 @@ async function oauthClientInit() {
         // Used to authenticate the client to the token endpoint. Will be used to
         // build the jwks object to be exposed on the "jwks_uri" endpoint.
         keyset: await Promise.all([
-            JoseKey.fromImportable(process.env.PRIVATE_KEY_1),
-            JoseKey.fromImportable(process.env.PRIVATE_KEY_2),
-            JoseKey.fromImportable(process.env.PRIVATE_KEY_3),
+            JoseKey.fromImportable(process.env.PRIVATE_KEY_1, 'key1'),
+            JoseKey.fromImportable(process.env.PRIVATE_KEY_2, 'key2'),
+            JoseKey.fromImportable(process.env.PRIVATE_KEY_3, 'key3'),
         ]),
 
         stateStore,
