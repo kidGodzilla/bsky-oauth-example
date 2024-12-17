@@ -1,15 +1,16 @@
 require('dotenv').config();
 
-const jwt = require('jsonwebtoken');
-const express = require('express');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const path = require('path');
+const express = require('express');
+const cors = require('cors');
 
 const { NodeOAuthClient, Session } = require('@atproto/oauth-client-node');
 const { JoseKey } = require('@atproto/jwk-jose');
 const { Agent } = require('@atproto/api');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secure-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
 const debug = process.env.DEBUG || false;
 const port = process.env.PORT || 5000;
 
@@ -20,6 +21,18 @@ const REDIRECT_URL = '/';
 // Express App
 const app = express();
 app.use(express.json());
+
+app.use(cors({
+    origin: process.env.BASE_URL,
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).send('Internal Server Error');
+});
+
 let client = null;
 
 // Simple In-memory session store (OAuth requirement)
