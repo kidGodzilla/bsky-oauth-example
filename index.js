@@ -270,6 +270,32 @@ app.get('/profile', verifyToken, async (req, res) => {
     }
 });
 
+// Revoke an access_token to demonstrate token refresh
+app.get('/revoke', verifyToken, async (req, res) => {
+    const sessionId = req.user.did;
+
+    try {
+        // Retrieve the session data from the store
+        const session = await sessionStore.get(sessionId);
+
+        if (!session) {
+            return res.status(404).json({ error: 'Session not found' });
+        }
+
+        // Delete the access_token and set expires to right now
+        delete session.tokenSet.access_token;
+        session.tokenSet.expires_at = new Date().toISOString();
+
+        // Save the updated session back to the store
+        await sessionStore.set(sessionId, session);
+
+        return res.json({ message: 'Access token revoked successfully.' });
+    } catch (error) {
+        console.error('Error revoking access token:', error);
+        return res.status(500).json({ error: 'Internal server error.' });
+    }
+});
+
 app.get(['/',], (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
