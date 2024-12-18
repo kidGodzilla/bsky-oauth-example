@@ -78,14 +78,17 @@ class InMemoryStore {
 
     // stateStore methods
     async set(key, internalState) {
+        if (debug) console.log('[Memory Store]:', 'set', key, internalState);
         this.storeData[key] = internalState;
     }
 
     async get(key) {
+        if (debug) console.log('[Memory Store]:', 'get', key, (this.storeData[key] || undefined));
         return this.storeData[key] || undefined;
     }
 
     async del(key) {
+        if (debug) console.log('[Memory Store]:', 'del', key, (this.storeData[key]));
         delete this.storeData[key];
     }
 }
