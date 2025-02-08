@@ -38,3 +38,9 @@ Basically, this demonstrates that all you need to do to build an app with long-l
 
 Some requirement may exist that the token be refreshed every day -- and if this does not occur your app may lose the ability to refresh the token. But as long as you continue to access Bluesky data via Atproto APIs on behalf of the user, you should be able to do so indefinitely, without interaction from the user.
 
+## Notes
+
+OAuth requires you to use `127.0.0.1` instead of localhost if you're running locally. It's part of the spec and arbitrarily enforced, so if you tried changing that and wondered why it broke, there you go.
+
+I've added a line that enforces https for `NODE_ENV=production` -- ensure you set this correctly based on whether you're running locally or not, otherwise, you'll run into issues testing locally without https.
+
