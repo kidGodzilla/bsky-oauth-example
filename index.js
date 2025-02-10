@@ -270,6 +270,30 @@ app.get('/profile', verifyToken, async (req, res) => {
     }
 });
 
+// Endpoint to demonstrate a write request
+app.get('/post', verifyToken, async (req, res) => {
+    if (!req.user || !req.user.did) return res.status(500).send('Error');
+
+    try {
+        const oauthSession = await client.restore(req.user.did);
+        // Instantiate the api Agent using an OAuthSession
+        const agent = new Agent(oauthSession);
+
+        const response = await agent.post({
+            $type: "app.bsky.feed.post",         // The AT Protocal type
+            text: req.query.text,
+            createdAt: new Date().toISOString()  // Required format
+        });
+
+        if (debug) console.log('Bsky response:', response);
+
+        res.json(response);
+    } catch(e) {
+        console.log(e);
+        res.status(403).send('Unauthorized'); // Simplified error handling for this example
+    }
+});
+
 // Revoke an access_token to demonstrate token refresh
 app.get('/revoke', verifyToken, async (req, res) => {
     const sessionId = req.user.did;

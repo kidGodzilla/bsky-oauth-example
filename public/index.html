@@ -59,6 +59,13 @@
         <article>
             <p>This is your example app. Requests made from this page are protected.</p>
 
+            <p>Post to your Bluesky account (uses the API) <mark>New!</mark></p>
+
+            <p>
+                <textarea name="post" id="post" rows="4"></textarea>
+                <button type="button" onclick="post()">Post to Bluesky</button>
+            </p>
+
             <p id="message">Here are your Bluesky token contents:</p>
 
             <pre><code id="token"></code></pre>
@@ -92,6 +99,22 @@
             document.querySelector('code').innerHTML = JSON.stringify(error, null, 2);
         }
     })();
+
+    async function post() {
+        try {
+            let text = document.querySelector('#post').value;
+            text = text.trim();
+            if (!text) return;
+
+            let response = await fetchWithAuth(`/post?text=${ encodeURIComponent(text) }`);
+            console.log('response', response);
+
+            document.querySelector('#post').value = '';
+            alert('Post successful! See console for response.')
+        } catch(e) {
+            console.log(e);
+        }
+    }
 </script>
 </body>
 </html>
