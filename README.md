@@ -4,6 +4,10 @@ This is a simple example of OAuth 2.0 sign-in for Bluesky, using Node, Express, 
 
 Think of it as a starter pack for developing on Atproto with OAuth 2.0.
 
+## Update: NPM Package
+
+I turned this into an [NPM Package](https://www.npmjs.com/package/bluesky-oauth-kit).
+
 # Installation
 
 Install npm dependencies (`npm i`) and generate keys for your `.env`.
