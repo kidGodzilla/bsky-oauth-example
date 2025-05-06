@@ -41,6 +41,13 @@ const app = express();
 app.set('trust proxy', 2);
 app.use(cookieParser());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors({
+    origin: process.env.OAUTH_BASE_URL,
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
 app.use(limiter);
 
 // Verify/force HTTPS
